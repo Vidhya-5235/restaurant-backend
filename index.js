@@ -57,6 +57,13 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+
+// ✅ Root Route
+app.get("/", (req, res) => {
+  res.send("🍽️ Amigos Restaurant Backend is Running!");
+});
+
+
 // ✅ Register API
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
