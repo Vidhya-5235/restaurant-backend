@@ -5,7 +5,13 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS (Allow requests from Netlify frontend)
+app.use(cors({
+  origin: "https://restuarant-frontend.netlify.app", // 🔁 Replace this with your real Netlify URL
+  credentials: true
+}));
+
 app.use(express.json());
 
 // ✅ Connect to MongoDB
@@ -16,15 +22,13 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log("✅ MongoDB connected"))
 .catch(err => console.error("❌ MongoDB connection failed:", err));
 
-
-// ✅ User Schema
+// ✅ Mongoose Schemas
 const User = mongoose.model("User", new mongoose.Schema({
   name: String,
   email: String,
   password: String
 }));
 
-// ✅ Booking Schema
 const bookingSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -37,7 +41,6 @@ const bookingSchema = new mongoose.Schema({
 });
 const Booking = mongoose.model("Booking", bookingSchema);
 
-// ✅ Payment Schema
 const payUserSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -48,23 +51,23 @@ const payUserSchema = new mongoose.Schema({
 });
 const PayUser = mongoose.model("PayUser", payUserSchema);
 
-// ✅ Nodemailer Transporter
+// ✅ Nodemailer Config
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,  // e.g. amigosrestuarant123@gmail.com
-    pass: process.env.EMAIL_PASS   // App Password (NOT your Gmail password)
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
+// ✅ Routes
 
-// ✅ Root Route
+// Home
 app.get("/", (req, res) => {
   res.send("🍽️ Amigos Restaurant Backend is Running!");
 });
 
-
-// ✅ Register API
+// Register
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -78,7 +81,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ✅ Login API
+// Login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -92,7 +95,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Table Booking API
+// Table Booking
 app.post("/book-table", async (req, res) => {
   const { name, email, phone, guests, datetime, message, preorder = [] } = req.body;
 
@@ -131,14 +134,13 @@ app.post("/book-table", async (req, res) => {
   }
 });
 
-// ✅ Payment API
+// Payment
 app.post("/pay", async (req, res) => {
   const { name, email, phone, amount, paymentMethod } = req.body;
 
   try {
     await PayUser.create({ name, email, phone, amount, paymentMethod });
 
-    // Common email for all payment methods
     const subject = "✅ Order Placed – Amigos Restaurant";
     const text = `Hi ${name},\n\n🎉 Your order has been placed successfully!\n💳 Payment Method: ${paymentMethod}\n💰 Amount: ₹${amount}\n📞 Contact: ${phone}\n\nThank you for choosing Amigos!\n– Amigos Team`;
 
@@ -149,8 +151,7 @@ app.post("/pay", async (req, res) => {
       text
     });
 
-   res.status(200).json({ message: "Payment successful", redirect: "cashsuc.html?clearCart=true" });
-
+    res.status(200).json({ message: "Payment successful", redirect: "cashsuc.html?clearCart=true" });
 
   } catch (err) {
     console.error("❌ Payment Error:", err);
@@ -158,8 +159,7 @@ app.post("/pay", async (req, res) => {
   }
 });
 
-
-// ✅ Feedback / Contact Form
+// Feedback
 app.post("/send-email", async (req, res) => {
   const { name, email, comment } = req.body;
 
@@ -184,7 +184,7 @@ app.post("/send-email", async (req, res) => {
   }
 });
 
-// ✅ Test Email Route
+// Test Email Route
 app.get("/test-email", async (req, res) => {
   try {
     await transporter.sendMail({
@@ -200,6 +200,6 @@ app.get("/test-email", async (req, res) => {
   }
 });
 
-// ✅ Start Server
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
